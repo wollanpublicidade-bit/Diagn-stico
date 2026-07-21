@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#075fa9" />
+  <title>Diagnóstico de Crescimento Gastronômico | Wollan</title>
+  <style>
+    :root{
+      --blue-950:#073766;
+      --blue-900:#074b85;
+      --blue-800:#075fa9;
+      --blue-700:#0c78c7;
+      --blue-500:#25a7df;
+      --blue-100:#eaf6ff;
+      --ink:#142033;
+      --muted:#64748b;
+      --line:#d8e5ef;
+      --paper:#ffffff;
+      --bg:#f4f8fb;
+      --success:#12805c;
+      --warning:#b06b00;
+      --danger:#bb3e3e;
+      --shadow:0 18px 50px rgba(7,75,133,.12);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(37,167,223,.12), transparent 24%),
+        linear-gradient(180deg,#edf7fd 0,#f8fbfd 26%,#f4f8fb 100%);
+    }
+
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    a{color:inherit}
+
+    .app{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:290px minmax(0,1fr);
+    }
+
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:28px 20px;
+      background:linear-gradient(155deg,var(--blue-950),var(--blue-800) 55%,var(--blue-500));
+      color:#fff;
+      overflow:auto;
+      z-index:20;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:5px 6px 24px;
+      border-bottom:1px solid rgba(255,255,255,.2);
+      margin-bottom:20px;
+    }
+
+    .brand img{
+      width:58px;height:58px;object-fit:cover;border-radius:16px;
+      border:1px solid rgba(255,255,255,.45);
+      box-shadow:0 10px 26px rgba(0,0,0,.18);
+    }
+    .brand strong{display:block;font-family:Georgia,serif;font-size:25px;letter-spacing:.06em}
+    .brand span{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.82}
+
+    .progress-wrap{margin:0 6px 22px}
+    .progress-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;opacity:.88}
+    .progress{height:8px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden}
+    .progress > i{display:block;height:100%;width:8.33%;background:#fff;border-radius:inherit;transition:.3s}
+
+    .nav{display:grid;gap:5px}
+    .nav button{
+      width:100%;
+      border:0;
+      background:transparent;
+      color:rgba(255,255,255,.78);
+      display:grid;
+      grid-template-columns:28px 1fr;
+      align-items:center;
+      gap:10px;
+      text-align:left;
+      padding:10px 10px;
+      border-radius:12px;
+      transition:.2s;
+      font-size:13px;
+    }
+    .nav button span:first-child{
+      width:27px;height:27px;border-radius:9px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.12);
+      font-weight:800;
+    }
+    .nav button:hover,.nav button.active{background:rgba(255,255,255,.14);color:#fff}
+    .nav button.active span:first-child{background:#fff;color:var(--blue-800)}
+
+    .sidebar-actions{
+      display:grid;gap:8px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.2)
+    }
+    .side-btn{
+      border:1px solid rgba(255,255,255,.35);
+      color:#fff;background:rgba(255,255,255,.1);
+      border-radius:12px;padding:10px 12px;
+    }
+
+    main{min-width:0}
+    .topbar{
+      position:sticky;top:0;z-index:15;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:15px clamp(18px,4vw,48px);
+      backdrop-filter:blur(14px);
+      background:rgba(248,251,253,.87);
+      border-bottom:1px solid rgba(216,229,239,.82);
+    }
+    .topbar small{color:var(--muted)}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    .btn{
+      border:0;border-radius:12px;padding:11px 16px;font-weight:760;
+      transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:linear-gradient(135deg,var(--blue-800),var(--blue-500));color:#fff;box-shadow:0 10px 24px rgba(7,95,169,.22)}
+    .btn-soft{background:var(--blue-100);color:var(--blue-900)}
+    .btn-outline{background:#fff;color:var(--blue-900);border:1px solid var(--line)}
+    .btn-danger{background:#fff1f1;color:var(--danger);border:1px solid #ffd0d0}
+
+    .content{max-width:1180px;margin:auto;padding:34px clamp(18px,4vw,50px) 72px}
+
+    .step{display:none;animation:fade .28s ease}
+    .step.active{display:block}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+    .hero{
+      min-height:calc(100vh - 160px);
+      display:grid;grid-template-columns:1.08fr .92fr;align-items:center;gap:42px;
+    }
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      color:var(--blue-800);background:var(--blue-100);
+      border:1px solid #caeaff;border-radius:999px;
+      padding:8px 12px;font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;
+    }
+    h1,h2,h3,p{margin-top:0}
+    h1{font-size:clamp(40px,6vw,74px);line-height:.94;letter-spacing:-.045em;margin:20px 0 18px}
+    h2{font-size:clamp(30px,4vw,48px);line-height:1.03;letter-spacing:-.035em;margin-bottom:12px}
+    h3{font-size:21px;margin-bottom:10px}
+    .lead{font-size:18px;line-height:1.65;color:var(--muted);max-width:700px}
+    .hero-logo{
+      background:linear-gradient(145deg,#31a9df,#0b5ea6);
+      padding:38px;border-radius:34px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    }
+    .hero-logo:before,.hero-logo:after{content:"";position:absolute;border:1px solid rgba(255,255,255,.22);border-radius:50%}
+    .hero-logo:before{width:420px;height:420px;right:-150px;top:-180px}
+    .hero-logo:after{width:300px;height:300px;left:-140px;bottom:-150px}
+    .hero-logo img{width:100%;display:block;border-radius:26px;position:relative;z-index:1}
+
+    .panel{
+      background:rgba(255,255,255,.93);border:1px solid rgba(216,229,239,.96);
+      box-shadow:var(--shadow);border-radius:var(--radius);padding:clamp(20px,3vw,32px);
+      margin-top:24px;
+    }
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+    .panel-head p{color:var(--muted);margin-bottom:0}
+
+    .grid{display:grid;gap:16px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+    label.field{display:grid;gap:8px;color:#334155;font-size:13px;font-weight:760}
+    input,select,textarea{
+      width:100%;border:1px solid var(--line);background:#fff;color:var(--ink);
+      border-radius:12px;padding:13px 14px;outline:none;transition:.2s;
+    }
+    textarea{min-height:110px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue-500);box-shadow:0 0 0 4px rgba(37,167,223,.12)}
+
+    .choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .choice{
+      position:relative;border:1px solid var(--line);background:#fff;border-radius:14px;
+      padding:13px 14px;min-height:54px;display:flex;align-items:center;gap:10px;
+      color:#334155;font-weight:700;transition:.2s;cursor:pointer;
+    }
+    .choice:hover{border-color:#9dd8f5;transform:translateY(-1px)}
+    .choice input{position:absolute;opacity:0;pointer-events:none}
+    .choice:has(input:checked){
+      border-color:var(--blue-500);background:var(--blue-100);color:var(--blue-900);
+      box-shadow:0 0 0 3px rgba(37,167,223,.09);
+    }
+    .checkmark{
+      width:20px;height:20px;min-width:20px;border:2px solid #aebdcc;border-radius:6px;
+      display:grid;place-items:center;font-size:12px;
+    }
+    .choice:has(input:checked) .checkmark{background:var(--blue-800);border-color:var(--blue-800);color:#fff}
+    .choice:has(input:checked) .checkmark:after{content:"✓"}
+
+    .subcard{border:1px solid var(--line);border-radius:18px;padding:20px;background:#fbfdff}
+    .subcard > h3{display:flex;align-items:center;gap:10px}
+    .number-badge{width:30px;height:30px;border-radius:10px;background:var(--blue-100);color:var(--blue-900);display:grid;place-items:center;font-size:13px}
+
+    .helper{
+      margin-top:18px;border:1px dashed #9ccae4;background:#f3faff;border-radius:16px;padding:16px 18px;display:none;
+    }
+    .helper.open{display:block}
+    .helper strong{display:block;color:var(--blue-900);margin-bottom:8px}
+    .helper ul{margin:0;padding-left:20px;color:#486176;line-height:1.7}
+
+    .section-actions{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:26px;
+      padding-top:22px;border-top:1px solid var(--line);
+    }
+
+    .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+    .metric{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+    .metric span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+    .metric strong{font-size:20px;color:var(--blue-900)}
+
+    .comparison{overflow:auto;margin-top:20px}
+    table{width:100%;border-collapse:collapse;min-width:720px}
+    th,td{text-align:left;padding:13px 12px;border-bottom:1px solid var(--line)}
+    th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#f8fbfd}
+    td strong{color:var(--blue-900)}
+
+    .channel-row{
+      display:grid;grid-template-columns:minmax(130px,1fr) minmax(220px,1.5fr);
+      gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)
+    }
+    .channel-row:last-child{border-bottom:0}
+
+    .opportunity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+
+    .summary-box{display:grid;gap:14px}
+    .summary-item{padding:18px;border-radius:16px;background:#f7fbfe;border:1px solid var(--line)}
+    .summary-item span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--blue-700);font-weight:850;margin-bottom:6px}
+    .summary-item p{margin:0;line-height:1.55}
+
+    .plan-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .plan-card{padding:20px;border-radius:18px;background:linear-gradient(180deg,#fff,#f7fbfe);border:1px solid var(--line)}
+    .plan-card b{display:block;color:var(--blue-900);font-size:18px;margin-bottom:7px}
+    .plan-card p{margin:0;color:var(--muted);line-height:1.55}
+
+    .price{
+      padding:28px;border-radius:22px;color:#fff;
+      background:linear-gradient(145deg,var(--blue-950),var(--blue-700));
+      box-shadow:0 18px 40px rgba(7,75,133,.22)
+    }
+    .price small{opacity:.8;text-transform:uppercase;letter-spacing:.08em}
+    .price strong{display:block;font-size:48px;margin:8px 0}
+    .price p{margin:0;opacity:.88}
+
+    .notice{border-left:4px solid var(--warning);background:#fff8e9;padding:16px 18px;border-radius:10px;color:#704b00;line-height:1.55}
+    .success{border-left-color:var(--success);background:#ecfbf5;color:#0e684b}
+
+    .finish-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .finish-actions button{min-height:78px}
+
+    .mobile-menu{display:none}
+
+    @media(max-width:980px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:fixed;left:0;top:0;width:290px;transform:translateX(-105%);transition:.25s;box-shadow:20px 0 60px rgba(0,0,0,.18)}
+      .sidebar.open{transform:none}
+      .mobile-menu{display:inline-flex}
+      .hero{grid-template-columns:1fr;min-height:auto}
+      .hero-logo{max-width:560px}
+      .grid-4,.plan-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:700px){
+      .topbar{padding:12px 15px}
+      .content{padding:24px 15px 55px}
+      .grid-2,.grid-3,.grid-4,.choice-grid,.opportunity-grid,.plan-grid,.finish-actions{grid-template-columns:1fr}
+      .channel-row{grid-template-columns:1fr}
+      .metric-grid{grid-template-columns:1fr}
+      h1{font-size:43px}
+      .hero-logo{padding:18px}
+      .section-actions{align-items:stretch}
+      .section-actions .btn{flex:1}
+      .topbar small{display:none}
+    }
+
+    @media print{
+      body{background:#fff}
+      .sidebar,.topbar,.section-actions,.helper,.helper-toggle,.no-print{display:none!important}
+      .app{display:block}
+      .content{max-width:none;padding:0}
+      .step{display:block!important;break-inside:avoid;margin-bottom:28px}
+      .hero{min-height:auto;grid-template-columns:1fr}
+      .hero-logo{display:none}
+      .panel{box-shadow:none;border:1px solid #ccd8e1}
+      input,select,textarea{border:0;padding:2px 0;background:transparent}
+      .choice{min-height:auto;padding:6px 8px}
+      .choice:not(:has(input:checked)){display:none}
+      .choice:has(input:checked){border:1px solid #c5ddeb}
+      h1{font-size:38px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img src="logo-wollan.jpeg" alt="Logo Wollan">
+      <div><strong>WOLLAN</strong><span>Marketing Gastronômico</span></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-head"><span>Progresso do diagnóstico</span><b id="progressText">1/12</b></div>
+      <div class="progress"><i id="progressBar"></i></div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button data-step="1" class="active"><span>1</span>Abertura</button>
+      <button data-step="2"><span>2</span>Experiência</button>
+      <button data-step="3"><span>3</span>Estrutura atual</button>
+      <button data-step="4"><span>4</span>Público principal</button>
+      <button data-step="5"><span>5</span>Produtos e margem</button>
+      <button data-step="6"><span>6</span>Canais de venda</button>
+      <button data-step="7"><span>7</span>Marca e comunicação</button>
+      <button data-step="8"><span>8</span>Oportunidades</button>
+      <button data-step="9"><span>9</span>Resumo automático</button>
+      <button data-step="10"><span>10</span>Plano Wollan</button>
+      <button data-step="11"><span>11</span>Investimento</button>
+      <button data-step="12"><span>12</span>Finalização</button>
+    </nav>
+
+    <div class="sidebar-actions">
+      <button class="side-btn" onclick="saveData()">Salvar diagnóstico</button>
+      <button class="side-btn" onclick="window.print()">Imprimir / gerar PDF</button>
+      <button class="side-btn" onclick="resetForm()">Limpar diagnóstico</button>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-soft mobile-menu" onclick="toggleMenu()">☰</button>
+        <div><b id="topTitle">Diagnóstico de Crescimento Gastronômico</b><br><small>Reunião consultiva Wollan</small></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-outline helper-toggle" onclick="toggleHelper()">Apoio da reunião</button>
+        <button class="btn btn-primary" onclick="saveData()">Salvar</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- 1 -->
+      <section class="step active" data-step="1">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">Diagnóstico consultivo Wollan</span>
+            <h1>Diagnóstico de crescimento gastronômico</h1>
+            <p class="lead">Nesta reunião, vamos entender seu negócio, identificar os produtos com maior potencial e definir as melhores oportunidades de crescimento.</p>
+
+            <div class="panel">
+              <div class="grid grid-2">
+                <label class="field">Nome da empresa<input name="empresa" placeholder="Ex.: Sabor da Casa"></label>
+                <label class="field">Responsável<input name="responsavel" placeholder="Nome do responsável"></label>
+                <label class="field">Segmento<input name="segmento" placeholder="Ex.: Restaurante, confeitaria, açaí"></label>
+                <label class="field">Cidade<input name="cidade" placeholder="Cidade / região"></label>
+              </div>
+              <div class="section-actions">
+                <span style="color:var(--muted);font-size:13px">As informações ficam salvas neste dispositivo.</span>
+                <button class="btn btn-primary" onclick="goTo(2)">Iniciar diagnóstico →</button>
+              </div>
+            </div>
+          </div>
+          <div class="hero-logo"><img src="logo-wollan.jpeg" alt="Wollan"></div>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section class="step" data-step="2">
+        <span class="eyebrow">Etapa 2 de 12</span>
+        <h2>Qual é sua experiência com marketing?</h2>
+        <p class="lead">Marque tudo o que representa o histórico e o momento atual do negócio.</p>
+        <div class="panel">
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="experiencia" value="Nunca investiu"><i class="checkmark"></i>Nunca investiu</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Já anunciou sozinho"><i class="checkmark"></i>Já anunciou sozinho</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Já contratou profissional"><i class="checkmark"></i>Já contratou profissional</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Já contratou agência"><i class="checkmark"></i>Já contratou agência</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Teve retorno"><i class="checkmark"></i>Teve retorno</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Não teve retorno"><i class="checkmark"></i>Não teve retorno</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Possui social media"><i class="checkmark"></i>Possui social media</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Já investe em tráfego"><i class="checkmark"></i>Já investe em tráfego</label>
+            <label class="choice"><input type="checkbox" name="experiencia" value="Precisa melhorar resultados"><i class="checkmark"></i>Precisa melhorar resultados</label>
+          </div>
+          <label class="field" style="margin-top:18px">Observação da experiência<textarea name="obsExperiencia" placeholder="Registre somente o que for importante para a proposta."></textarea></label>
+          <div class="helper">
+            <strong>Perguntas para conduzir esta etapa</strong>
+            <ul><li>Como foi sua experiência?</li><li>O que você esperava receber?</li><li>Qual foi o principal problema?</li><li>Hoje alguém cuida dessa parte?</li></ul>
+          </div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(1)">← Voltar</button><button class="btn btn-primary" onclick="goTo(3)">Continuar →</button></div>
+        </div>
+      </section>
+
+      <!-- 3 -->
+      <section class="step" data-step="3">
+        <span class="eyebrow">Etapa 3 de 12</span>
+        <h2>Como o negócio funciona hoje?</h2>
+        <p class="lead">Vamos registrar somente os fatores que afetam a capacidade de crescer.</p>
+        <div class="panel">
+          <div class="grid grid-2">
+            <label class="field">Ticket médio<input type="number" step="0.01" name="ticket" placeholder="R$ 0,00"></label>
+            <label class="field">Capacidade de atendimento
+              <select name="capacidade">
+                <option value="">Selecione</option>
+                <option>Está no limite</option>
+                <option>Consegue atender mais</option>
+                <option>Precisa organizar a operação antes de crescer</option>
+              </select>
+            </label>
+          </div>
+
+          <h3 style="margin-top:24px">Sazonalidade</h3>
+          <div class="grid grid-4">
+            <label class="field">Dias fortes<input name="diasFortes" placeholder="Ex.: sexta e sábado"></label>
+            <label class="field">Dias fracos<input name="diasFracos" placeholder="Ex.: segunda a quarta"></label>
+            <label class="field">Meses fortes<input name="mesesFortes" placeholder="Ex.: dezembro"></label>
+            <label class="field">Meses fracos<input name="mesesFracos" placeholder="Ex.: junho e julho"></label>
+          </div>
+
+          <h3 style="margin-top:24px">Principal objetivo</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="radio" name="objetivo" value="Aumentar movimento"><i class="checkmark"></i>Aumentar movimento</label>
+            <label class="choice"><input type="radio" name="objetivo" value="Aumentar ticket"><i class="checkmark"></i>Aumentar ticket</label>
+            <label class="choice"><input type="radio" name="objetivo" value="Vender mais em dias fracos"><i class="checkmark"></i>Vender mais em dias fracos</label>
+            <label class="choice"><input type="radio" name="objetivo" value="Aumentar delivery"><i class="checkmark"></i>Aumentar delivery</label>
+            <label class="choice"><input type="radio" name="objetivo" value="Melhorar recorrência"><i class="checkmark"></i>Melhorar recorrência</label>
+            <label class="choice"><input type="radio" name="objetivo" value="Fortalecer a marca"><i class="checkmark"></i>Fortalecer a marca</label>
+          </div>
+          <div class="helper"><strong>Perguntas para conduzir esta etapa</strong><ul><li>Existe capacidade para receber mais pedidos?</li><li>Qual período precisa de mais movimento?</li><li>O crescimento desejado é no salão, delivery ou nos dois?</li></ul></div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(2)">← Voltar</button><button class="btn btn-primary" onclick="goTo(4)">Continuar →</button></div>
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section class="step" data-step="4">
+        <span class="eyebrow">Etapa 4 de 12</span>
+        <h2>Quem mais compra de você?</h2>
+        <p class="lead">Identifique os grupos mais importantes sem transformar a conversa em uma pesquisa cansativa.</p>
+        <div class="panel">
+          <h3>Perfil principal</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="publico" value="Jovens"><i class="checkmark"></i>Jovens</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Adultos"><i class="checkmark"></i>Adultos</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Famílias"><i class="checkmark"></i>Famílias</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Casais"><i class="checkmark"></i>Casais</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Grupos de amigos"><i class="checkmark"></i>Grupos de amigos</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Trabalhadores da região"><i class="checkmark"></i>Trabalhadores da região</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Empresas"><i class="checkmark"></i>Empresas</label>
+            <label class="choice"><input type="checkbox" name="publico" value="Público de eventos"><i class="checkmark"></i>Público de eventos</label>
+          </div>
+
+          <div class="grid grid-3" style="margin-top:22px">
+            <label class="field">Região
+              <select name="regiao"><option value="">Selecione</option><option>Bairro</option><option>Cidade</option><option>Outras cidades</option><option>Público próximo ao estabelecimento</option></select>
+            </label>
+            <label class="field">Forma principal de consumo
+              <select name="consumo"><option value="">Selecione</option><option>Presencial</option><option>Delivery</option><option>Retirada</option><option>Encomenda</option><option>Eventos</option></select>
+            </label>
+            <label class="field">Momento principal de compra
+              <select name="momento"><option value="">Selecione</option><option>Almoço</option><option>Jantar</option><option>Fim de semana</option><option>Comemoração</option><option>Consumo rápido</option><option>Presente</option><option>Compra recorrente</option></select>
+            </label>
+          </div>
+          <label class="field" style="margin-top:16px">O cliente compra principalmente por
+            <select name="motivacao"><option value="">Selecione</option><option>Preço</option><option>Qualidade</option><option>Conveniência</option><option>Experiência</option><option>Tradição</option><option>Rapidez</option></select>
+          </label>
+          <div class="helper"><strong>Perguntas para conduzir esta etapa</strong><ul><li>Quem representa a maior parte das vendas?</li><li>Quem costuma gastar mais?</li><li>Existe algum público importante que compra pouco hoje?</li><li>O cliente compra por preço, qualidade, conveniência ou experiência?</li></ul></div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(3)">← Voltar</button><button class="btn btn-primary" onclick="goTo(5)">Continuar →</button></div>
+        </div>
+      </section>
+
+      <!-- 5 -->
+      <section class="step" data-step="5">
+        <span class="eyebrow">Etapa 5 de 12</span>
+        <h2>Onde está o dinheiro do cardápio?</h2>
+        <p class="lead">Compare o carro-chefe com o produto mais lucrativo e enxergue o papel de cada um na estratégia.</p>
+        <div class="panel">
+          <div class="grid grid-2">
+            <div class="subcard">
+              <h3><span class="number-badge">1</span>Carro-chefe</h3>
+              <div class="grid grid-2">
+                <label class="field">Produto<input name="p1nome" placeholder="Nome do produto"></label>
+                <label class="field">Preço de venda<input type="number" step="0.01" name="p1preco" oninput="calcProducts()"></label>
+                <label class="field">Custo de produção<input type="number" step="0.01" name="p1custo" oninput="calcProducts()"></label>
+                <label class="field">Vendas por mês<input type="number" step="1" name="p1volume" oninput="calcProducts()"></label>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><span>Lucro por unidade</span><strong id="p1Lucro">R$ 0,00</strong></div>
+                <div class="metric"><span>Margem</span><strong id="p1Margem">0%</strong></div>
+                <div class="metric"><span>Lucro mensal</span><strong id="p1Total">R$ 0,00</strong></div>
+              </div>
+            </div>
+
+            <div class="subcard">
+              <h3><span class="number-badge">2</span>Produto mais lucrativo</h3>
+              <div class="grid grid-2">
+                <label class="field">Produto<input name="p2nome" placeholder="Nome do produto"></label>
+                <label class="field">Preço de venda<input type="number" step="0.01" name="p2preco" oninput="calcProducts()"></label>
+                <label class="field">Custo de produção<input type="number" step="0.01" name="p2custo" oninput="calcProducts()"></label>
+                <label class="field">Vendas por mês<input type="number" step="1" name="p2volume" oninput="calcProducts()"></label>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><span>Lucro por unidade</span><strong id="p2Lucro">R$ 0,00</strong></div>
+                <div class="metric"><span>Margem</span><strong id="p2Margem">0%</strong></div>
+                <div class="metric"><span>Lucro mensal</span><strong id="p2Total">R$ 0,00</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comparison">
+            <table>
+              <thead><tr><th>Comparação automática</th><th>Resultado</th></tr></thead>
+              <tbody>
+                <tr><td>Maior margem</td><td id="maiorMargem">Preencha os produtos</td></tr>
+                <tr><td>Maior lucro por unidade</td><td id="maiorLucro">Preencha os produtos</td></tr>
+                <tr><td>Maior lucro total mensal</td><td id="maiorTotal">Preencha os produtos</td></tr>
+                <tr><td>Diferença de preço</td><td id="difPreco">R$ 0,00</td></tr>
+                <tr><td>Diferença de margem</td><td id="difMargem">0 p.p.</td></tr>
+                <tr><td>Diferença de volume</td><td id="difVolume">0 unidades</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top:24px">Pontos de análise</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Produto com maior potencial para combo"><i class="checkmark"></i>Potencial para combo</label>
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Produto com maior valor percebido"><i class="checkmark"></i>Maior valor percebido</label>
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Produto com maior facilidade de produção"><i class="checkmark"></i>Fácil de produzir</label>
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Produto com desperdício"><i class="checkmark"></i>Gera desperdício</label>
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Produto com pouca saída"><i class="checkmark"></i>Tem pouca saída</label>
+            <label class="choice"><input type="checkbox" name="analiseProduto" value="Possibilidade de reduzir o cardápio"><i class="checkmark"></i>Reduzir cardápio</label>
+          </div>
+          <div class="helper"><strong>Perguntas para conduzir esta etapa</strong><ul><li>Por que o carro-chefe vende mais?</li><li>Esse sucesso depende do preço, sabor, apresentação ou tradição?</li><li>Existe item que ocupa espaço, gera desperdício e quase não vende?</li><li>Qual produto suporta maior volume sem prejudicar a operação?</li></ul></div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(4)">← Voltar</button><button class="btn btn-primary" onclick="goTo(6)">Continuar →</button></div>
+        </div>
+      </section>
+
+      <!-- 6 -->
+      <section class="step" data-step="6">
+        <span class="eyebrow">Etapa 6 de 12</span>
+        <h2>Onde as vendas acontecem?</h2>
+        <p class="lead">Registre o peso de cada canal sem transformar a tela em uma auditoria acusatória.</p>
+        <div class="panel" id="channels"></div>
+        <div class="helper"><strong>Perguntas para conduzir esta etapa</strong><ul><li>Qual canal realmente gera vendas?</li><li>Qual canal traz maior ticket?</li><li>Existe dependência de uma única plataforma?</li><li>O cliente consegue comprar com facilidade?</li></ul></div>
+        <div class="section-actions"><button class="btn btn-outline" onclick="goTo(5)">← Voltar</button><button class="btn btn-primary" onclick="goTo(7)">Continuar →</button></div>
+      </section>
+
+      <!-- 7 -->
+      <section class="step" data-step="7">
+        <span class="eyebrow">Etapa 7 de 12</span>
+        <h2>Como sua empresa quer ser percebida?</h2>
+        <p class="lead">Compare a imagem desejada com as forças que o cliente já reconhece no próprio negócio.</p>
+        <div class="panel">
+          <h3>Percepção desejada</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="percepcao" value="Preço acessível"><i class="checkmark"></i>Preço acessível</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Qualidade"><i class="checkmark"></i>Qualidade</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Rapidez"><i class="checkmark"></i>Rapidez</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Tradição"><i class="checkmark"></i>Tradição</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Experiência"><i class="checkmark"></i>Experiência</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Família"><i class="checkmark"></i>Família</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Exclusividade"><i class="checkmark"></i>Exclusividade</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Saudável"><i class="checkmark"></i>Saudável</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Artesanal"><i class="checkmark"></i>Artesanal</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Conveniência"><i class="checkmark"></i>Conveniência</label>
+            <label class="choice"><input type="checkbox" name="percepcao" value="Alto padrão"><i class="checkmark"></i>Alto padrão</label>
+          </div>
+          <h3 style="margin-top:24px">O que já representa a força da marca?</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="forca" value="Produto"><i class="checkmark"></i>Produto</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Atendimento"><i class="checkmark"></i>Atendimento</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Ambiente"><i class="checkmark"></i>Ambiente</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Embalagem"><i class="checkmark"></i>Embalagem</label>
+            <label class="choice"><input type="checkbox" name="forca" value="História"><i class="checkmark"></i>História</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Preço"><i class="checkmark"></i>Preço</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Personalização"><i class="checkmark"></i>Personalização</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Localização"><i class="checkmark"></i>Localização</label>
+            <label class="choice"><input type="checkbox" name="forca" value="Experiência"><i class="checkmark"></i>Experiência</label>
+          </div>
+          <label class="field" style="margin-top:18px">Principal diferencial<textarea name="diferencial" placeholder="Descreva em uma frase curta."></textarea></label>
+          <div class="helper"><strong>Perguntas para conduzir esta etapa</strong><ul><li>Qual é o principal diferencial?</li><li>O cliente percebe esse diferencial?</li><li>A comunicação atual representa a qualidade do negócio?</li><li>Existe diferença entre como a empresa quer ser vista e como aparece hoje?</li></ul></div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(6)">← Voltar</button><button class="btn btn-primary" onclick="goTo(8)">Continuar →</button></div>
+        </div>
+      </section>
+
+      <!-- 8 -->
+      <section class="step" data-step="8">
+        <span class="eyebrow">Etapa 8 de 12</span>
+        <h2>Oportunidades encontradas</h2>
+        <p class="lead">Selecione somente as oportunidades sustentadas pela conversa e pelos dados preenchidos.</p>
+        <div class="panel">
+          <div class="opportunity-grid" id="opportunities"></div>
+          <label class="field" style="margin-top:22px">Principal oportunidade<textarea name="principalOportunidade" placeholder="Ex.: Utilizar o carro-chefe para atrair novos clientes e criar combos com o produto de maior margem."></textarea></label>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(7)">← Voltar</button><button class="btn btn-primary" onclick="buildSummary();goTo(9)">Gerar resumo →</button></div>
+        </div>
+      </section>
+
+      <!-- 9 -->
+      <section class="step" data-step="9">
+        <span class="eyebrow">Etapa 9 de 12</span>
+        <h2>Resumo do diagnóstico</h2>
+        <p class="lead">O texto abaixo é montado automaticamente a partir das opções selecionadas durante a reunião.</p>
+        <div class="panel">
+          <div class="summary-box">
+            <div class="summary-item"><span>Cenário atual</span><p id="sumCenario">Preencha as etapas anteriores para gerar o cenário.</p></div>
+            <div class="summary-item"><span>Público principal</span><p id="sumPublico">Nenhum público selecionado.</p></div>
+            <div class="summary-item"><span>Produto principal</span><p id="sumProduto">Preencha os dados dos produtos.</p></div>
+            <div class="summary-item"><span>Rentabilidade</span><p id="sumRentabilidade">Preencha os dados de margem.</p></div>
+            <div class="summary-item"><span>Marca e canais</span><p id="sumMarca">Preencha marca e canais.</p></div>
+            <div class="summary-item"><span>Direção recomendada</span><p id="sumDirecao">Selecione as oportunidades identificadas.</p></div>
+          </div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(8)">← Ajustar diagnóstico</button><button class="btn btn-primary" onclick="goTo(10)">Apresentar Plano Wollan →</button></div>
+        </div>
+      </section>
+
+      <!-- 10 -->
+      <section class="step" data-step="10">
+        <span class="eyebrow">Etapa 10 de 12</span>
+        <h2>Como a Wollan entra nesse projeto</h2>
+        <p class="lead">Uma atuação completa, organizada em quatro frentes claras.</p>
+        <div class="panel">
+          <div class="plan-grid">
+            <div class="plan-card"><b>Estratégia</b><p>Definição dos produtos, públicos, ofertas e campanhas.</p></div>
+            <div class="plan-card"><b>Produção</b><p>Criação dos materiais necessários para apresentar o negócio de forma profissional.</p></div>
+            <div class="plan-card"><b>Divulgação</b><p>Distribuição dos conteúdos e anúncios para alcançar as pessoas certas.</p></div>
+            <div class="plan-card"><b>Acompanhamento</b><p>Análise dos resultados e ajustes durante o projeto.</p></div>
+          </div>
+
+          <h3 style="margin-top:28px">O cliente recebe</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Planejamento mensal</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Produção de conteúdos</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Fotos e vídeos quando necessário</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Gestão das campanhas</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Acompanhamento dos resultados</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Reuniões de alinhamento</label>
+          </div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(9)">← Voltar</button><button class="btn btn-primary" onclick="goTo(11)">Ver investimento →</button></div>
+        </div>
+      </section>
+
+      <!-- 11 -->
+      <section class="step" data-step="11">
+        <span class="eyebrow">Etapa 11 de 12</span>
+        <h2>Investimento e responsabilidades</h2>
+        <p class="lead">Separação clara entre o serviço da Wollan, a verba de mídia e a participação do cliente.</p>
+        <div class="panel">
+          <div class="grid grid-2">
+            <div class="price">
+              <small>Investimento Wollan</small>
+              <strong>R$ 1.500</strong>
+              <p>mensais</p>
+            </div>
+            <div class="subcard">
+              <h3>Investimento em anúncios</h3>
+              <p style="color:var(--muted);line-height:1.65">A verba destinada às plataformas de anúncio não está incluída no valor da gestão. O orçamento será definido de acordo com a capacidade financeira e os objetivos do negócio.</p>
+              <label class="field">Verba mensal possível<input type="number" step="0.01" name="verbaAnuncios" placeholder="R$ 0,00"></label>
+            </div>
+          </div>
+
+          <h3 style="margin-top:26px">Responsabilidade do cliente</h3>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Manter a verba acordada</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Informar quanto consegue investir</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Manter estoque e capacidade</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Cumprir as ofertas anunciadas</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Responder com agilidade</label>
+            <label class="choice"><input type="checkbox" checked disabled><i class="checkmark"></i>Fornecer informações necessárias</label>
+          </div>
+
+          <div class="notice" style="margin-top:22px">A Wollan não recomendará um orçamento que o negócio não consiga manter. Porém, após a definição da estratégia, a interrupção ou redução da verba de anúncios pode comprometer o alcance, os testes e os resultados planejados.</div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(10)">← Voltar</button><button class="btn btn-primary" onclick="goTo(12)">Finalizar diagnóstico →</button></div>
+        </div>
+      </section>
+
+      <!-- 12 -->
+      <section class="step" data-step="12">
+        <span class="eyebrow">Etapa 12 de 12</span>
+        <h2>Próximos passos</h2>
+        <p class="lead">Encerre a reunião com clareza e registre a decisão tomada.</p>
+        <div class="panel">
+          <div class="grid grid-2">
+            <label class="field">O diagnóstico fez sentido?
+              <select name="diagnosticoSentido"><option value="">Selecione</option><option>Sim</option><option>Parcialmente</option><option>Não</option></select>
+            </label>
+            <label class="field">O plano atende ao negócio?
+              <select name="planoAtende"><option value="">Selecione</option><option>Sim</option><option>Precisa de ajuste</option><option>Não</option></select>
+            </label>
+            <label class="field">Existe outra pessoa na decisão?
+              <select name="outroDecisor"><option value="">Selecione</option><option>Não</option><option>Sim, sócio</option><option>Sim, cônjuge</option><option>Sim, outro responsável</option></select>
+            </label>
+            <label class="field">Data do retorno<input type="datetime-local" name="dataRetorno"></label>
+          </div>
+          <label class="field" style="margin-top:18px">Observação final<textarea name="observacaoFinal" placeholder="Registre objeções, próximos passos e acordos."></textarea></label>
+
+          <div class="finish-actions" style="margin-top:22px">
+            <button class="btn btn-primary" onclick="setDecision('Enviar contrato')">Enviar contrato</button>
+            <button class="btn btn-soft" onclick="setDecision('Agendar retorno')">Agendar retorno</button>
+            <button class="btn btn-outline" onclick="setDecision('Registrar observação')">Registrar observação</button>
+          </div>
+          <input type="hidden" name="decisao" value="">
+          <div id="decisionNotice" class="notice success" style="margin-top:18px;display:none"></div>
+          <div class="section-actions"><button class="btn btn-outline" onclick="goTo(11)">← Voltar</button><div style="display:flex;gap:8px"><button class="btn btn-outline" onclick="window.print()">Gerar PDF</button><button class="btn btn-primary" onclick="saveData()">Salvar diagnóstico</button></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  const titles = [
+    "Diagnóstico de Crescimento Gastronômico","Experiência com marketing","Estrutura atual do negócio",
+    "Público principal","Produtos, margem e rentabilidade","Canais e presença comercial",
+    "Marca e comunicação","Oportunidades identificadas","Resumo do diagnóstico",
+    "Plano Wollan","Investimento e responsabilidades","Finalização"
+  ];
+  let currentStep = 1;
+  let helperOpen = false;
+
+  const channels = ["Loja física","Instagram","WhatsApp","Google","Delivery próprio","iFood ou aplicativo","Indicação","Eventos","Encomendas"];
+  const channelOptions = ["Não utiliza","Utiliza pouco","Funciona bem","Precisa melhorar","Principal canal"];
+  const channelBox = document.getElementById("channels");
+  channelBox.innerHTML = channels.map((c,i)=>`
+    <div class="channel-row">
+      <strong>${c}</strong>
+      <select name="canal_${i}" aria-label="${c}">
+        <option value="">Selecione a situação</option>
+        ${channelOptions.map(o=>`<option>${o}</option>`).join("")}
+      </select>
+    </div>`).join("");
+
+  const opportunities = [
+    "Aumentar vendas nos dias fracos","Criar oferta para o carro-chefe","Usar o produto mais lucrativo em combos",
+    "Aumentar o ticket médio","Fortalecer o delivery","Atrair público da região","Explorar novos momentos de consumo",
+    "Criar campanhas para casais","Criar campanhas para famílias","Trabalhar eventos e encomendas",
+    "Melhorar a apresentação dos produtos","Aumentar recorrência","Reduzir dependência de um canal",
+    "Explorar produtos com maior margem","Melhorar percepção de valor","Organizar uma comunicação mais comercial",
+    "Reduzir produtos com pouca saída","Aproveitar melhor a capacidade disponível"
+  ];
+  document.getElementById("opportunities").innerHTML = opportunities.map(o=>
+    `<label class="choice"><input type="checkbox" name="oportunidade" value="${o}"><i class="checkmark"></i>${o}</label>`
+  ).join("");
+
+  document.getElementById("nav").addEventListener("click", e=>{
+    const btn=e.target.closest("button[data-step]");
+    if(btn) goTo(Number(btn.dataset.step));
+  });
+
+  function goTo(step){
+    currentStep = Math.max(1,Math.min(12,step));
+    document.querySelectorAll(".step").forEach(s=>s.classList.toggle("active",Number(s.dataset.step)===currentStep));
+    document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",Number(b.dataset.step)===currentStep));
+    document.getElementById("progressText").textContent=`${currentStep}/12`;
+    document.getElementById("progressBar").style.width=`${currentStep/12*100}%`;
+    document.getElementById("topTitle").textContent=titles[currentStep-1];
+    document.querySelectorAll(".helper").forEach(h=>h.classList.toggle("open",helperOpen));
+    window.scrollTo({top:0,behavior:"smooth"});
+    if(currentStep===9) buildSummary();
+    document.getElementById("sidebar").classList.remove("open");
+  }
+
+  function toggleHelper(){
+    helperOpen=!helperOpen;
+    document.querySelectorAll(".helper").forEach(h=>h.classList.toggle("open",helperOpen));
+  }
+  function toggleMenu(){document.getElementById("sidebar").classList.toggle("open")}
+
+  function money(n){return Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+  function val(name){return document.querySelector(`[name="${name}"]`)?.value||""}
+  function checked(name){return [...document.querySelectorAll(`[name="${name}"]:checked`)].map(x=>x.value)}
+
+  function product(prefix){
+    const name=val(prefix+"nome")||("Produto "+prefix.toUpperCase());
+    const preco=Number(val(prefix+"preco")||0), custo=Number(val(prefix+"custo")||0), volume=Number(val(prefix+"volume")||0);
+    const lucro=preco-custo, margem=preco>0?(lucro/preco*100):0, total=lucro*volume;
+    return {name,preco,custo,volume,lucro,margem,total};
+  }
+  function winner(a,b,key){
+    if(!a.preco&&!b.preco) return "Preencha os produtos";
+    if(a[key]===b[key]) return "Empate";
+    return a[key]>b[key]?a.name:b.name;
+  }
+  function calcProducts(){
+    const a=product("p1"),b=product("p2");
+    document.getElementById("p1Lucro").textContent=money(a.lucro);
+    document.getElementById("p1Margem").textContent=a.margem.toFixed(1).replace(".",",")+"%";
+    document.getElementById("p1Total").textContent=money(a.total);
+    document.getElementById("p2Lucro").textContent=money(b.lucro);
+    document.getElementById("p2Margem").textContent=b.margem.toFixed(1).replace(".",",")+"%";
+    document.getElementById("p2Total").textContent=money(b.total);
+    document.getElementById("maiorMargem").textContent=winner(a,b,"margem");
+    document.getElementById("maiorLucro").textContent=winner(a,b,"lucro");
+    document.getElementById("maiorTotal").textContent=winner(a,b,"total");
+    document.getElementById("difPreco").textContent=money(Math.abs(a.preco-b.preco));
+    document.getElementById("difMargem").textContent=Math.abs(a.margem-b.margem).toFixed(1).replace(".",",")+" p.p.";
+    document.getElementById("difVolume").textContent=Math.abs(a.volume-b.volume)+" unidades";
+  }
+
+  function buildSummary(){
+    const capacidade=val("capacidade"), objetivo=checked("objetivo")[0]||val("objetivo"), diasFracos=val("diasFracos");
+    let cenario="O negócio ainda precisa completar os dados de estrutura para formar uma leitura mais precisa.";
+    if(capacidade==="Consegue atender mais") cenario=`O negócio possui capacidade para aumentar o atendimento${diasFracos?`, com oportunidade de melhorar o movimento em ${diasFracos}`:""}.`;
+    if(capacidade==="Está no limite") cenario="O negócio já opera próximo do limite e precisa priorizar ticket, margem e organização antes de buscar mais volume.";
+    if(capacidade==="Precisa organizar a operação antes de crescer") cenario="A operação precisa ser organizada antes de acelerar a entrada de novos pedidos.";
+    if(objetivo) cenario += ` O objetivo principal definido é ${objetivo.toLowerCase()}.`;
+
+    const pub=checked("publico");
+    const publico=pub.length?`Os grupos mais relevantes são ${pub.join(", ")}. O consumo principal acontece por ${val("consumo")||"canal ainda não definido"}, especialmente em ${val("momento")||"momento ainda não definido"}.`:"Nenhum público principal foi selecionado.";
+
+    const a=product("p1"),b=product("p2");
+    let produto="Preencha os dados do carro-chefe e do produto mais lucrativo.";
+    let rent="Preencha os preços, custos e volumes para comparar a rentabilidade.";
+    if(a.preco||b.preco){
+      produto=`${a.name} é o carro-chefe informado, com volume estimado de ${a.volume} unidades por mês.`;
+      rent=`${winner(a,b,"margem")} apresenta a maior margem; ${winner(a,b,"total")} gera o maior lucro total mensal estimado.`;
+    }
+
+    const percepcao=checked("percepcao"), forca=checked("forca");
+    const channelData=channels.map((c,i)=>({c,v:val("canal_"+i)})).filter(x=>x.v);
+    const principal=channelData.filter(x=>x.v==="Principal canal").map(x=>x.c);
+    let marca=`A empresa quer ser percebida por ${percepcao.length?percepcao.join(", "):"atributos ainda não selecionados"}.`;
+    if(forca.length) marca+=` As forças já reconhecidas são ${forca.join(", ")}.`;
+    if(principal.length) marca+=` O principal canal indicado é ${principal.join(", ")}.`;
+
+    const ops=checked("oportunidade");
+    const custom=val("principalOportunidade");
+    const direcao=custom || (ops.length?`Priorizar ${ops.slice(0,3).join(", ").toLowerCase()}.`:"Selecione as oportunidades identificadas.");
+
+    document.getElementById("sumCenario").textContent=cenario;
+    document.getElementById("sumPublico").textContent=publico;
+    document.getElementById("sumProduto").textContent=produto;
+    document.getElementById("sumRentabilidade").textContent=rent;
+    document.getElementById("sumMarca").textContent=marca;
+    document.getElementById("sumDirecao").textContent=direcao;
+  }
+
+  function collectData(){
+    const data={};
+    document.querySelectorAll("input,select,textarea").forEach(el=>{
+      if(!el.name) return;
+      if(el.type==="checkbox"){
+        data[el.name]=data[el.name]||[];
+        if(el.checked&&!el.disabled)data[el.name].push(el.value);
+      }else if(el.type==="radio"){
+        if(el.checked)data[el.name]=el.value;
+      }else data[el.name]=el.value;
+    });
+    data._step=currentStep;
+    return data;
+  }
+
+  function saveData(){
+    localStorage.setItem("wollanDiagnostico",JSON.stringify(collectData()));
+    const btn=document.querySelector(".top-actions .btn-primary");
+    const original=btn.textContent; btn.textContent="Salvo ✓";
+    setTimeout(()=>btn.textContent=original,1300);
+  }
+
+  function loadData(){
+    const raw=localStorage.getItem("wollanDiagnostico"); if(!raw) return;
+    try{
+      const data=JSON.parse(raw);
+      Object.entries(data).forEach(([name,value])=>{
+        if(name==="_step") return;
+        const els=[...document.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+        els.forEach(el=>{
+          if(el.type==="checkbox") el.checked=Array.isArray(value)&&value.includes(el.value);
+          else if(el.type==="radio") el.checked=value===el.value;
+          else el.value=value??"";
+        });
+      });
+      calcProducts(); buildSummary();
+    }catch(e){console.warn("Não foi possível restaurar os dados.",e)}
+  }
+
+  function resetForm(){
+    if(!confirm("Deseja apagar todos os dados deste diagnóstico?")) return;
+    localStorage.removeItem("wollanDiagnostico");
+    document.querySelectorAll("input,select,textarea").forEach(el=>{
+      if(el.disabled) return;
+      if(el.type==="checkbox"||el.type==="radio") el.checked=false;
+      else el.value="";
+    });
+    calcProducts(); buildSummary(); goTo(1);
+  }
+
+  function setDecision(decision){
+    document.querySelector('[name="decisao"]').value=decision;
+    const notice=document.getElementById("decisionNotice");
+    notice.style.display="block";
+    notice.textContent=`Próximo passo registrado: ${decision}.`;
+    saveData();
+  }
+
+  document.addEventListener("input",()=>{ if(currentStep===5) calcProducts(); });
+  window.addEventListener("beforeunload",saveData);
+  loadData();
+  calcProducts();
+</script>
+</body>
+</html>
